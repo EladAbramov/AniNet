@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:audioplayers/audio_cache.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,31 +8,45 @@ import 'dart:math' as math;
 import 'package:camera/camera.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'BoxResults.dart';
-import 'CameraLiveScreen.dart';
+import '../Live/BoxResults.dart';
+import '../Live/CameraLiveScreen.dart';
 
-class RecognitionScreen extends StatefulWidget {
-  RecognitionScreen({Key key}) : super(key: key);
-  _RecognitionScreenState createState() => _RecognitionScreenState();
+class RecognitionVetScreen extends StatefulWidget {
+  RecognitionVetScreen({Key key}) : super(key: key);
+  _RecognitionVetScreenState createState() => _RecognitionVetScreenState();
 }
 
-class _RecognitionScreenState extends State<RecognitionScreen> {
+class _RecognitionVetScreenState extends State<RecognitionVetScreen> {
   List<CameraDescription> cameras;
   bool live = false;
   List<dynamic> recognitions;
   int imageHeight = 0;
   int imageWidth = 0;
   bool loading = false;
+  bool camera;
   File image;
   List outputs;
   String output = "";
   String confidence = "";
   final picker = ImagePicker();
+  static AudioCache player1 = AudioCache();
+  static AudioCache player2 = AudioCache();
+
+
+  void playAudio(){
+    Timer(Duration(seconds: 7), () {
+      player1.play('audio/Whistle.mp3');
+      Timer(Duration(seconds: 7), () {
+        player2.play('audio/cat.mp3');
+      });
+    });
+  }
 
   @override
   void initState() {
     super.initState();
     loading = true;
+    camera = false;
     loadModel().then((value){
       setState(() {
         loading = false;
@@ -40,6 +56,10 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
   initializedCamera() async{
     try {
       cameras = await availableCameras();
+      if(cameras.isNotEmpty){
+        camera = true;
+        playAudio();
+      }
     }
     catch(e){
       print("Error: $e");
@@ -48,8 +68,8 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
   loadModel() async {
     try {
       await Tflite.loadModel(
-        model: "assets/model_unquant.tflite",
-        labels: "assets/labels.txt",
+        model: "assets/model/model_unquant.tflite",
+        labels: "assets/model/labels.txt",
       );
       print("Model loaded successfully");
     }catch(e){
@@ -76,7 +96,7 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
   getLabel(File _image) async {
     var res = await Tflite.runModelOnImage(
       path: image.path,
-      numResults: 3,
+      numResults: 12,
       threshold: 0.5,
       imageMean: 127.5,
       imageStd: 127.5,
@@ -109,16 +129,16 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
     Size size = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
-        title: Center(child: Text('AniNet')),
+        title: Center(child: Text('AniNet Vet', style: TextStyle(color: Colors.black),)),
         actions: <Widget>[
           FlatButton.icon(
-            onPressed: () async {
-              SharedPreferences prefs = await SharedPreferences.getInstance();
-              await prefs.setString("token", null);
-              Navigator.pushNamed(context, "Login");
-            },
-            icon: Icon(Icons.exit_to_app, color: Colors.white,),
-            label: Text("logout", style: TextStyle(color: Colors.white),)
+              onPressed: () async {
+                SharedPreferences prefs = await SharedPreferences.getInstance();
+                await prefs.setString("vetToken", null);
+                Navigator.pushNamed(context, "LoginVet");
+              },
+              icon: Icon(Icons.exit_to_app, color: Colors.white,),
+              label: Text("logout", style: TextStyle(color: Colors.white),)
           ),
         ],
       ),
@@ -130,16 +150,42 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
               child: CircularProgressIndicator(),
             ):
             Container(
-              width: size.width*0.8,
-              height: size.height*0.7,
+              width: size.width*1,
+              height: size.height*0.85,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
-                  Center(
-                    child: image != null ? Image.file(image, width: size.width * 0.5) : Container(),
+                  outputs == null ? Container()
+                      : Container(
+                    child: RichText(
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: "The Dog or Cat name is: ",
+                            style: TextStyle(color: Colors.black, fontSize: 20, fontFamily: 'Times New Roman'),
+                          ),
+                          TextSpan(
+                            text: "$output",
+                            style: TextStyle(color: Colors.lightBlueAccent, fontWeight: FontWeight.bold, fontSize: 22, fontFamily: 'Times New Roman'),
+                          ),
+                          TextSpan(
+                            text: "\n\nConfidence: ",
+                            style: TextStyle(color: Colors.black, fontSize: 20, fontFamily: 'Times New Roman'),
+                          ),
+                          TextSpan(
+                            text: "$confidence",
+                            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 22, fontFamily: 'Times New Roman'),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  outputs == null ? Container() : Text("$output\nconfidence: $confidence"),
+                  SizedBox(height: 20,),
+                  Center(
+                    child: image != null ? Image.file(image, width: size.width * 1) : Container(),
+                  ),
                 ],
               ),
             )
@@ -166,18 +212,23 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
-            RaisedButton(
-              child: Text("Choose Image"),
+            RaisedButton.icon(
+              label: Text("Choose Image"),
+              icon: Icon(Icons.camera),
               onPressed: () {
                 setState(() {
                   live = false;
                 });
                 initializedCamera();
-                getImage();
+                print(camera);
+                if(camera == true){
+                  getImage();
+                }
               },
             ),
-            RaisedButton(
-              child: Text("Live"),
+            RaisedButton.icon(
+              label: Text("On Live"),
+              icon: Icon(Icons.live_tv),
               onPressed: () {
                 setState(() {
                   live = true;

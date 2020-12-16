@@ -29,7 +29,7 @@ class _CameraLiveScreenState extends State<CameraLiveScreen> {
     } else {
       controller = new CameraController(
         widget.cameras[0],
-        ResolutionPreset.veryHigh,
+        ResolutionPreset.max, //check it out
       );
       controller.initialize().then((_) {
         if (!mounted) {
@@ -49,7 +49,7 @@ class _CameraLiveScreenState extends State<CameraLiveScreen> {
               }).toList(),
               imageHeight: img.height,
               imageWidth: img.width,
-              numResults: 3,
+              numResults: 1,
             ).then((recognitions) {
               int endTime = new DateTime.now().millisecondsSinceEpoch;
               print("Detection took ${endTime - startTime}");

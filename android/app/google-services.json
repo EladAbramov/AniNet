@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "588339618674",
+    "firebase_url": "https://aninet-a5a20.firebaseio.com",
+    "project_id": "aninet-a5a20",
+    "storage_bucket": "aninet-a5a20.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:588339618674:android:8c926a0073b435662073eb",
+        "android_client_info": {
+          "package_name": "com.example.aninet"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "588339618674-k05is2umvisp2eumgtrhrnsmgl7fsuec.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.aninet",
+            "certificate_hash": "a423839fe1bb75f109d689c26c6a80ba398505c5"
+          }
+        },
+        {
+          "client_id": "588339618674-tjequo6q02c9u1j0p5qg5t1no707ihcg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgbI3FmJHdRL8qy2dkozQyqJQRfvzFHa8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "588339618674-tjequo6q02c9u1j0p5qg5t1no707ihcg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
