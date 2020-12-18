@@ -2,12 +2,14 @@ import 'package:aninet/Authentication/LoginVet.dart';
 import 'package:aninet/Authentication/SignUp.dart';
 import 'package:aninet/ChooseAccountScreen.dart';
 import 'package:aninet/OnBoarding.dart';
+import 'package:aninet/Profile/OwnerProfile.dart';
 import 'package:aninet/Splash.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'Authentication/Login.dart';
 import 'Authentication/SignUpVet.dart';
+import 'Profile/AnimalProfile.dart';
 import 'Recognition/RecognitionScreen.dart';
 import 'Recognition/RecognitionVetScreen.dart';
 
@@ -48,6 +50,9 @@ class AniNet extends StatelessWidget {
         "LoginVet": (context) => LoginVet(),
         "RecognitionScreen": (context) => RecognitionScreen(),
         "RecognitionVetScreen": (context) => RecognitionVetScreen(),
+        "AnimalProfile": (context) => AnimalProfile(),
+        "OwnerProfile": (context) => OwnerProfile(),
+
 
       },
     );

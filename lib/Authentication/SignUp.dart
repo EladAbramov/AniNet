@@ -26,13 +26,13 @@ class _SignUpState extends State<SignUp> {
   String hintOwnerName = "Owner Name";
   String hintAnimalName = "Animal Name";
   TextInputType textInput = TextInputType.text;
+
   List<AnimalType> types = <AnimalType>[
     const AnimalType('Dog',FaIcon(FontAwesomeIcons.dog, color:  const Color(0xFF167F67),)),
     const AnimalType('Cat',FaIcon(FontAwesomeIcons.cat, color:  const Color(0xFF167F67),)),
   ];
+
   AnimalType selectedType;
-
-
   final videoInfo = FlutterVideoInfo();
   int videoSeconds = 0;
   File videoFile;
@@ -118,7 +118,6 @@ class _SignUpState extends State<SignUp> {
 
       Timer(Duration(seconds: 1), () async {
         videoUrl = await rfs.getDownloadURL();
-        print(videoUrl);
       });
       return AwesomeDialog(
           context: context,
@@ -136,26 +135,20 @@ class _SignUpState extends State<SignUp> {
     }
   }
 
-  void clear(){
-    setState(() => videoFile = null);
-  }
-
   _saveForm() {
     var form = formKey.currentState;
     if (form.validate()) {
       form.save();
       print("form saved");
     }
-    clear();
+    setState(() => videoFile = null);
   }
-  @override
 
   void initState() {
     super.initState();
     animalType = '';
     videoUrl = '';
     loading = false;
-
   }
 
   Widget build(BuildContext context) {
@@ -169,26 +162,45 @@ class _SignUpState extends State<SignUp> {
     checkToken();
     return Scaffold(
       appBar: AppBar(title: Text("Sign Up User", style: TextStyle(color: Colors.black),), iconTheme: IconThemeData(color: Colors.black),),
-      backgroundColor: Colors.cyan[100],
-      body: Form(
-        key: formKey,
-        child: ListView(
-          padding: const EdgeInsets.only(left: 16, right: 16, top: 30),
-          children: [
-            buildTextConstraintsBox(ownerName, hintOwnerName, textInput),
-            buildTextConstraintsBox(animalName,hintAnimalName, textInput),
-            buildAnimalTypeDropDown(),
-            buildVideoUpload(),
-            loading==true?Container(child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: CircularProgressIndicator(strokeWidth: 1, backgroundColor: CupertinoColors.activeBlue, value: 5.4),
-            )):Container(),
-            buildEmailConstraintsBox(),
-            buildPasswordConstraintBox(),
-            SizedBox(height: 10,),
-            buildSignUpButton(),
-            buildLoginButton(),
-          ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            stops: [0.1, 0.9],
+            colors: [
+              Color(0xff59a3de),
+              Color(0xff86a1ef),
+            ],
+          ),
+        ),
+        child: Form(
+          key: formKey,
+          child: ListView(
+            padding: const EdgeInsets.only(left: 16, right: 16, top: 30),
+            children: [
+              Center(child: Text('Welcome To AniNet', style: TextStyle(fontSize: 24, color: Colors.white70),)),
+              SizedBox(height: 20,),
+              buildTextConstraintsBox(ownerName, hintOwnerName, textInput),
+              SizedBox(height: 10,),
+              buildTextConstraintsBox(animalName,hintAnimalName, textInput),
+              SizedBox(height: 10,),
+              buildAnimalTypeDropDown(),
+              SizedBox(height: 10,),
+              buildVideoUpload(),
+              SizedBox(height: 10,),
+              loading==true?Container(child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CircularProgressIndicator(strokeWidth: 1, backgroundColor: CupertinoColors.activeBlue, value: 5.4),
+              )):Container(),
+              buildEmailConstraintsBox(),
+              SizedBox(height: 10,),
+              buildPasswordConstraintBox(),
+              SizedBox(height: 10,),
+              buildSignUpButton(),
+              buildLoginButton(),
+            ],
+          ),
         ),
       ),
     );
@@ -220,12 +232,12 @@ class _SignUpState extends State<SignUp> {
                 borderRadius: BorderRadius.circular(25.0),
                 borderSide: BorderSide(
                     color: Colors.blue,
-                    width: 2.0)),
+                    width: 2.5)),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(25.0),
               borderSide: BorderSide(
                   color: Colors.blue,
-                  width: 1.5
+                  width: 2
               ),
             ),
           ),
@@ -243,7 +255,7 @@ class _SignUpState extends State<SignUp> {
           decoration: BoxDecoration(
             border: Border.all(
                 color: Colors.blue,
-                width: 1.5
+                width: 2
             ),
             borderRadius: BorderRadius.circular(25),
           ),
@@ -291,31 +303,40 @@ class _SignUpState extends State<SignUp> {
           decoration: BoxDecoration(
             border: Border.all(
                 color: Colors.blue,
-                width: 1.5
+                width: 2
             ),
             borderRadius: BorderRadius.circular(25),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              Text('Upload', style: TextStyle(fontSize: 16)),
-              IconButton(
-                  color: Colors.white,
-                  icon: isOk==false?Icon(Icons.video_library, color: Colors.redAccent): Icon(Icons.beenhere, color: Colors.greenAccent,),
-                  onPressed: () {
-                    AwesomeDialog(
-                        context: context,
-                        dialogType: DialogType.INFO,
-                        animType: AnimType.SCALE,
-                        title: 'Video length:',
-                        headerAnimationLoop: false,
-                        desc: 'Please upload video of 60 seconds or more..',
-                        btnOkOnPress: () {
-                          _pickVideo(ImageSource.gallery);
-                        }
-                    ).show();
-                  }
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: Text('Upload Animal Video', style: TextStyle(fontSize: 16, color: Colors.blueGrey[800])),
+                ),
+              ),
+
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 130),
+                  child: IconButton(
+                      color: Colors.white,
+                      icon: isOk==false?Icon(Icons.video_library, color: Colors.blueGrey): Icon(Icons.beenhere, color: Colors.green,),
+                      onPressed: () {
+                        AwesomeDialog(
+                            context: context,
+                            dialogType: DialogType.INFO,
+                            animType: AnimType.SCALE,
+                            title: 'Video length:',
+                            headerAnimationLoop: false,
+                            desc: 'Please upload video of 60 seconds or more..',
+                            btnOkOnPress: () {
+                              _pickVideo(ImageSource.gallery);
+                            }
+                        ).show();
+                      }
+                  ),
+                ),
               ),
             ],
           ),
@@ -349,12 +370,14 @@ class _SignUpState extends State<SignUp> {
                 borderRadius: BorderRadius.circular(25.0),
                 borderSide: BorderSide(
                     color: Colors.blue,
-                    width: 2.0)),
+                    width: 2.5
+                ),
+            ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(25.0),
               borderSide: BorderSide(
                   color: Colors.blue,
-                  width: 1.5
+                  width: 2
               ),
             ),
           ),
@@ -386,14 +409,14 @@ class _SignUpState extends State<SignUp> {
                 borderRadius: BorderRadius.circular(25.0),
                 borderSide: BorderSide(
                     color: Colors.blue,
-                    width: 2.0
+                    width: 2.5
                 )
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(25.0),
               borderSide: BorderSide(
                   color: Colors.blue,
-                  width: 1.5
+                  width: 2
               ),
             ),
           ),
@@ -423,7 +446,7 @@ class _SignUpState extends State<SignUp> {
             print(token);
             _saveForm();
             if(token!=null){
-              Navigator.pushNamed(context, "RecognitionScreen");
+              Navigator.pushNamed(context, "OwnerProfile");
             }
           },
           padding: EdgeInsets.only(top: 12, bottom: 12),

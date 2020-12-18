@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:audioplayers/audio_cache.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_open_whatsapp/flutter_open_whatsapp.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:location/location.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tflite/tflite.dart';
 import 'dart:math' as math;
@@ -35,7 +37,10 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
   bool guest;
   Size screenSize;
 
-  void playAudio(){
+  LocationData _locationData;
+  var longitude, latitude ;
+
+  Future <void> playAudio()async {
     Timer(Duration(seconds: 7), () {
       player1.play('audio/Whistle.mp3');
       Timer(Duration(seconds: 7), () {
@@ -53,18 +58,59 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
     super.initState();
     loading = true;
     camera = false;
+    longitude = '';
+    latitude = '';
+
     loadModel().then((value){
       setState(() {
         loading = false;
       });
     });
   }
+
+  Future<void> getLocationAndSendSMS() async {
+    Location location = new Location();
+    bool _serviceEnabled;
+    PermissionStatus _permissionGranted;
+
+    _serviceEnabled = await location.serviceEnabled();
+    if (!_serviceEnabled) {
+      _serviceEnabled = await location.requestService();
+      if (!_serviceEnabled) {
+        return;
+      }
+    }
+
+    _permissionGranted = await location.hasPermission();
+    if (_permissionGranted == PermissionStatus.denied) {
+      _permissionGranted = await location.requestPermission();
+      if (_permissionGranted != PermissionStatus.granted) {
+        return;
+      }
+    }
+
+    _locationData = await location.getLocation();
+    longitude = _locationData.longitude.toString();
+    latitude = _locationData.latitude.toString();
+    print( latitude + ' ' + longitude);
+    Timer(const Duration(seconds: 5), () {
+      print("Sending location to owner "+latitude + ' ' + longitude);
+      FlutterOpenWhatsapp.sendSingleMessage(
+          "972542539811",
+          "Hello Elad Your dog $output has found on location:\n"+
+          "https://maps.google.com/maps?q=loc:$latitude,$longitude"
+      );
+    });
+  }
+
   initializedCamera() async{
     try {
       cameras = await availableCameras();
       if(cameras.isNotEmpty){
         camera = true;
-        playAudio();
+        if(camera == true){
+          await playAudio();
+        }
       }
     }
     catch(e){
@@ -114,6 +160,12 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
       String str = recognitions[0]["label"];
       output = str.substring(2);
       confidence = recognitions != null ? (recognitions[0]["confidence"]*100.0).toString().substring(0, 2) + '%': "";
+
+      int numberConfidence = int.tryParse(confidence.substring(0, 2));
+      print(numberConfidence);
+      if(numberConfidence>=85){
+        getLocationAndSendSMS();
+      }
       print(recognitions);
     });
   }
@@ -193,7 +245,7 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
                   ),
                   SizedBox(height: 20,),
                   Center(
-                    child: image != null ? Image.file(image, width: screenSize.width * 0.9) : Container(),
+                    child: image != null ? Card(child: Image.file(image, width: screenSize.width * 0.9)) : Container(),
                   ),
                 ],
               ),
@@ -260,7 +312,7 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
                 ),
                 textColor: Colors.white,
                 splashColor: Colors.blue,
-                onPressed: () {
+                onPressed: ()async  {
                   setState(() {
                     live = true;
                   });

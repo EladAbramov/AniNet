@@ -4,10 +4,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ChooseAccountScreen extends StatelessWidget {
-
   String option="";
-  @override
+
   Widget build(BuildContext context) {
+
     checkToken() async {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String token = prefs.getString("token");
@@ -21,7 +21,7 @@ class ChooseAccountScreen extends StatelessWidget {
     checkToken();
     return Scaffold(
       appBar: AppBar(
-        title: Text("Choose Your Account", style: TextStyle(color: Colors.black),),
+        title: Center(child: Text("Choose Your Account", style: TextStyle(color: Colors.black),)),
       ),
       backgroundColor: Colors.cyan[100],
       body: Center(
@@ -61,7 +61,7 @@ class ChooseAccountScreen extends StatelessWidget {
                   child: RaisedButton.icon(
                       onPressed: (){
                         option="user";
-                        Navigator.pushNamed(context, "SignUp");
+                        Navigator.pushNamed(context, "OwnerProfile");
                       },
                       icon: FaIcon(FontAwesomeIcons.user, color: Colors.white, size: 16),
                       label: Text("Come As User", style: TextStyle(fontSize: 20, color: Colors.white, fontFamily: 'Times New Roman'))
