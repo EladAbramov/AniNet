@@ -29,7 +29,7 @@ class BoxResults extends StatelessWidget {
           height: screenH,
           child: Center(
             child: Text(
-              val > 90.0 ? "${re["label"].toString().substring(2)} ${(re["confidence"] * 100).toStringAsFixed(0)}%" : "",
+              val > 90.0 ? "${re["label"].toString().substring(2)} ${(re["confidence"] * 100).toStringAsFixed(0)}%" : "unknown",
               style: TextStyle(
                 color: Colors.red,
                 fontSize: 54.0,

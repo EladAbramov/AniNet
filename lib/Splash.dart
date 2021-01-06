@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Splash extends StatefulWidget {
-  @override
   SplashState createState() => new SplashState();
 }
 
@@ -16,19 +15,26 @@ class SplashState extends State<Splash>
   Animation<double> animation;
 
   startTime() async {
-    var _duration = new Duration(seconds: 5);
+    var _duration = new Duration(seconds: 3);
     return new Timer(_duration, navigationPage);
   }
 
-  Future navigationPage() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool finished = prefs.getBool("finishBoarding")  ?? false;
-    if(finished){
-      Navigator.of(context).pushReplacementNamed("ChooseAccountScreen");
+  navigationPage() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool finished;
+    try{
+      finished = prefs.getBool("finish");
+    }catch(e){
+      print(e);
     }
-    else{
+
+    print(finished);
+    if(finished==true){
+      Navigator.of(context).pushReplacementNamed("ChooseAccountScreen");
+    }else{
       Navigator.of(context).pushReplacementNamed("OnBoarding");
     }
+
   }
 
   @override

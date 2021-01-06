@@ -1,45 +1,52 @@
-import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
 
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:country_picker/country_picker.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class OwnerProfile extends StatefulWidget {
-  @override
-  _OwnerProfileState createState() => _OwnerProfileState();
+class EditOwner extends StatefulWidget {
+  final List list;
+  final int index;
+
+  EditOwner({this.list, this.index});  _EditOwnerState createState() => _EditOwnerState();
 }
 
-class _OwnerProfileState extends State<OwnerProfile> {
+class _EditOwnerState extends State<EditOwner> {
   File ownerAvatarFile;
   var ownerAvatarUrl;
-  TextEditingController ownerName = new TextEditingController();
-  TextEditingController phoneNumber = new TextEditingController();
+  var ownerName;
+  var phoneNumber;
   var country;
   final formKey = new GlobalKey<FormState>();
   bool uploaded;
   final picker = ImagePicker();
+  bool loading;
+  bool isOk = false;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+  UploadTask _upload;
+  var email = '';
+  var password = '';
+  var ownerId;
 
-  // TODO: Make route accessiable only for permitted user - "http://10.0.2.2:5000/:id/ownerprofile";
-  ownerProfile(ownerAvatarUrl, ownerName, phoneNumber,country) async {
-    var url = "http://10.0.2.2:5000/ownerprofile";
-    await http.post(
-      url,
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, String>{
-        'ownerAvatarUrl': ownerAvatarUrl,
-        'ownerName': ownerName.text,
-        'phoneNumber': phoneNumber.text,
-        'country': country
-      }),
-    );
+  editOwner(String _id, String ownerAvatarUrl, String ownerName, String phoneNumber , String country) async {
+    var url = "http://10.0.2.2:5000/owner/$_id";
+    http.put(url,
+        body: {
+          "ownerAvatarUrl": "$ownerAvatarUrl",
+          "ownerName": "$ownerName",
+          "phoneNumber": "$phoneNumber",
+          "country": "$country",
+        }).then((response){
+      print('Response status : ${response.statusCode}');
+      print('Response body : ${response.body}');
+    });
   }
 
   showCountry(){
@@ -56,24 +63,50 @@ class _OwnerProfileState extends State<OwnerProfile> {
   }
   Future<void> pickImage(ImageSource image) async {
     final PickedFile selectedImage = await picker.getImage(source: image);
+
     if (selectedImage == null) {
       return;
     }
     setState(() {
       ownerAvatarFile = File(selectedImage.path);
       uploaded = true;
-
     });
-    return AwesomeDialog(
-        context: context,
-        dialogType: DialogType.SUCCES,
-        animType: AnimType.BOTTOMSLIDE,
-        title: '',
-        headerAnimationLoop: false,
-        desc: '',
-        btnOkOnPress: () {}).show();
+
+    await uploadImage(ownerAvatarFile);
   }
 
+  uploadImage(File _ownerAvatarFile)async{
+    String filePath = 'owner/images/$ownerName.jpg';
+    loading = true;
+    setState(() {
+      _upload = _storage.ref().child(filePath).putFile(_ownerAvatarFile);
+    });
+
+    if(_upload!=null){
+      print("good");
+      loading=false;
+      isOk=true;
+      return AwesomeDialog(
+          context: context,
+          dialogType: DialogType.SUCCES,
+          animType: AnimType.BOTTOMSLIDE,
+          title: 'Thanks For The Image :)',
+          headerAnimationLoop: false,
+          desc: '',
+          btnOkOnPress: () {
+            getImageUrl();
+          }
+      ).show();
+    }
+  }
+
+  getImageUrl(){
+    Reference rfs = _upload.snapshot.ref;
+    return Timer(Duration(seconds: 5), () async {
+      ownerAvatarUrl = await rfs.getDownloadURL();
+      print(ownerAvatarUrl);
+    });
+  }
 
   _saveForm() {
     var form = formKey.currentState;
@@ -87,15 +120,20 @@ class _OwnerProfileState extends State<OwnerProfile> {
     super.initState();
     setState(() {
       uploaded = false;
+      ownerName = '';
+      phoneNumber = '';
       ownerAvatarUrl = '';
       country = '';
+      loading = false;
+      ownerId = '';
+
     });
 
   }
 
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Owner Profile", style: TextStyle(color: Colors.black),), iconTheme: IconThemeData(color: Colors.black),),
+      appBar: AppBar(title: Text("Owner Authentication.Profile", style: TextStyle(color: Colors.black),), iconTheme: IconThemeData(color: Colors.black),),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -117,9 +155,9 @@ class _OwnerProfileState extends State<OwnerProfile> {
               SizedBox(height: 30),
               buildOwnerNameField(),
               SizedBox(height: 20),
-              buildPhoneNumber(),
-              SizedBox(height: 20),
               buildCountry(),
+              SizedBox(height: 20),
+              buildPhoneNumber(),
               SizedBox(height: 30),
               buildSaveButton(),
             ],
@@ -133,7 +171,9 @@ class _OwnerProfileState extends State<OwnerProfile> {
     return Container(
       child: GestureDetector(
         onTap: (){
-          pickImage(ImageSource.gallery);
+          if(ownerName.toString().length>0){
+            pickImage(ImageSource.gallery);
+          }
         },
         child: AvatarGlow(
           glowColor: Colors.blue,
@@ -146,24 +186,25 @@ class _OwnerProfileState extends State<OwnerProfile> {
             elevation: 8.0,
             shape: CircleBorder(),
             child: CircleAvatar(
+              radius: 75.0,
               backgroundColor: Colors.grey[100],
-              child: uploaded==true?Container(
+              child: uploaded==false?
+              Image.asset(
+                'assets/beforeprofile.png',
+                height: 150,
+                fit: BoxFit.cover,
+                width: 150,
+              ):Container(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(65.0),
-                  child: Image.asset(
-                    ownerAvatarFile.path,
+                  child: Image.file(
+                    ownerAvatarFile,
                     fit: BoxFit.cover,
                     height: 150,
                     width: 150,
                   ),
                 ),
-              ): Image.asset(
-                'assets/beforeprofile.png',
-                height: 150,
-                fit: BoxFit.cover,
-                width: 150,
               ),
-              radius: 75.0,
             ),
           ),
         ),
@@ -181,57 +222,20 @@ class _OwnerProfileState extends State<OwnerProfile> {
           keyboardType: TextInputType.text,
           autocorrect: false,
           onSaved: (String val) {
-            ownerName.text = val;
+            ownerName = val;
+          },
+          validator: (String value) {
+            return value.isEmpty ? 'Please fill your name' : 'its good';
           },
           onChanged: (val){
-            ownerName.text = val;
+            ownerName = val;
           },
           textInputAction: TextInputAction.next,
           onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
           decoration: InputDecoration(
             contentPadding: new EdgeInsets.symmetric(
                 vertical: 8, horizontal: 16),
-            hintText: "Name",
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(25.0),
-              borderSide: BorderSide(
-                  color: Colors.blue,
-                  width: 2.5
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(25.0),
-              borderSide: BorderSide(
-                  color: Colors.blue,
-                  width: 2
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-  Widget buildPhoneNumber(){
-    return ConstrainedBox(
-      constraints: BoxConstraints(minWidth: double.infinity),
-      child: Padding(
-        padding:
-        const EdgeInsets.only(top: 16.0, right: 8.0, left: 8.0),
-        child: TextFormField(
-          keyboardType: TextInputType.phone,
-          autocorrect: false,
-          onSaved: (String val) {
-            phoneNumber.text = val;
-          },
-          onChanged: (val){
-            phoneNumber.text = val;
-          },
-          textInputAction: TextInputAction.next,
-          onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-          decoration: InputDecoration(
-            contentPadding: new EdgeInsets.symmetric(
-                vertical: 8, horizontal: 16),
-            hintText: "Phone Number",
+            hintText: "Full Name",
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(25.0),
               borderSide: BorderSide(
@@ -260,8 +264,8 @@ class _OwnerProfileState extends State<OwnerProfile> {
         child: Container(
           decoration: BoxDecoration(
             border: Border.all(
-              color: Colors.blue,
-              width: 2
+                color: Colors.blue,
+                width: 2
             ),
             borderRadius: BorderRadius.circular(25),
           ),
@@ -288,6 +292,46 @@ class _OwnerProfileState extends State<OwnerProfile> {
     );
 
   }
+  Widget buildPhoneNumber(){
+    return ConstrainedBox(
+      constraints: BoxConstraints(minWidth: double.infinity),
+      child: Padding(
+        padding:
+        const EdgeInsets.only(top: 16.0, right: 8.0, left: 8.0),
+        child: TextFormField(
+          keyboardType: TextInputType.phone,
+          autocorrect: false,
+          onSaved: (String val) {
+            phoneNumber = val;
+          },
+          onChanged: (val){
+            phoneNumber = val;
+          },
+          textInputAction: TextInputAction.next,
+          onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+          decoration: InputDecoration(
+            contentPadding: new EdgeInsets.symmetric(
+                vertical: 8, horizontal: 16),
+            hintText: "Phone Number",
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(25.0),
+              borderSide: BorderSide(
+                  color: Colors.blue,
+                  width: 2.5
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(25.0),
+              borderSide: BorderSide(
+                  color: Colors.blue,
+                  width: 2
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget buildSaveButton(){
     return Padding(
@@ -304,9 +348,13 @@ class _OwnerProfileState extends State<OwnerProfile> {
           textColor: Colors.white,
           splashColor: Colors.blue,
           onPressed: () async {
-            await ownerProfile(ownerAvatarUrl, ownerName, phoneNumber, country);
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            var _ownerId = prefs.getString("newOwnerId");
+            ownerId = _ownerId;
+            print(ownerId);
+            await editOwner(ownerId, ownerAvatarUrl, ownerName, phoneNumber, country);
             _saveForm();
-            Navigator.pushNamed(context, "AnimalProfile");
+            Navigator.pushNamed(context, "OwnersList");
 
           },
           padding: EdgeInsets.only(top: 12, bottom: 12),

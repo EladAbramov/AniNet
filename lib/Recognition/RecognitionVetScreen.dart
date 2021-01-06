@@ -1,4 +1,5 @@
 import 'dart:async';
+//import 'package:audioplayers/audio_cache.dart';
 import 'package:audioplayers/audio_cache.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
@@ -68,8 +69,8 @@ class _RecognitionVetScreenState extends State<RecognitionVetScreen> {
   loadModel() async {
     try {
       await Tflite.loadModel(
-        model: "assets/model/model_unquant.tflite",
-        labels: "assets/model/labels.txt",
+        model: "assets/model/specificAnimalModel.tflite",
+        labels: "assets/model/specificAnimalLabels.txt",
       );
       print("Model loaded successfully");
     }catch(e){

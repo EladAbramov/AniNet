@@ -9,7 +9,9 @@ class LoginVet extends StatelessWidget {
   var email, password, name;
 
   loginVet(name, email, password) async {
-    var url = "http://10.0.2.2:5000/loginvet";
+    //real device port - 192.168.0.127
+    //emu device port - 10.0.2.2
+    var url = "http://10.0.2.2:5000/vet/loginvet";
     final http.Response response = await http.post(
       url,
       headers: <String, String>{
@@ -24,9 +26,8 @@ class LoginVet extends StatelessWidget {
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var parse = jsonDecode(response.body);
-    print(parse);
     await prefs.setString("vetToken", parse["vetToken"]);
-  }
+    }
 
   Widget build(BuildContext context) {
     return Scaffold(
@@ -171,6 +172,7 @@ class LoginVet extends StatelessWidget {
                         await loginVet(name, email, password);
                         SharedPreferences prefs = await SharedPreferences.getInstance();
                         String vetToken = prefs.getString("vetToken");
+                        print(vetToken);
                         if(vetToken!=null){
                           Navigator.pushNamed(context, "RecognitionVetScreen");
                         }

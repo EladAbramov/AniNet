@@ -2,22 +2,22 @@ import 'package:aninet/Authentication/LoginVet.dart';
 import 'package:aninet/Authentication/SignUp.dart';
 import 'package:aninet/ChooseAccountScreen.dart';
 import 'package:aninet/OnBoarding.dart';
-import 'package:aninet/Profile/OwnerProfile.dart';
+import 'package:aninet/Authentication/Profiles/OwnerProfile.dart';
 import 'package:aninet/Splash.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_downloader/flutter_downloader.dart';
+import 'AnimalsList.dart';
 import 'Authentication/Login.dart';
 import 'Authentication/SignUpVet.dart';
-import 'Profile/AnimalProfile.dart';
-import 'Recognition/RecognitionScreen.dart';
+import 'Authentication/Profiles/AnimalProfile.dart';
+import 'DetailedAnimal.dart';
+import 'OwnersList.dart';
+import 'Recognition/RecognitionGuestScreen.dart';
+import 'Recognition/RecognitionOwnerScreen.dart';
 import 'Recognition/RecognitionVetScreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await FlutterDownloader.initialize(
-      debug: true // optional: set false to disable printing logs to console
-  );
   runApp(AniNet());
 }
 
@@ -48,10 +48,15 @@ class AniNet extends StatelessWidget {
         "SignUp": (context) => SignUp(),
         "SignUpVet": (context) => SignUpVet(),
         "LoginVet": (context) => LoginVet(),
-        "RecognitionScreen": (context) => RecognitionScreen(),
+        "RecognitionGuestScreen": (context) => RecognitionGuestScreen(),
+        "RecognitionOwnerScreen": (context) => RecognitionOwnerScreen(),
         "RecognitionVetScreen": (context) => RecognitionVetScreen(),
         "AnimalProfile": (context) => AnimalProfile(),
         "OwnerProfile": (context) => OwnerProfile(),
+        "AnimalsList": (context) => AnimalsList(),
+        "OwnersList": (context) => OwnersList(),
+        "DetailedAnimal": (context) => DetailedAnimal(),
+
 
 
       },

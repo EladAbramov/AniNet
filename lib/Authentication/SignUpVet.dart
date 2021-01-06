@@ -8,7 +8,7 @@ class SignUpVet extends StatelessWidget {
   var email, password, name;
 
   signUpVet(name,email,password) async {
-    var url = "http://10.0.2.2:5000/signupvet";
+    var url = "http://10.0.2.2:5000/vet/signupvet";
     final http.Response response = await http.post(
       url,
       headers: <String, String>{

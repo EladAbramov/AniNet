@@ -10,7 +10,7 @@ class OnBoarding extends StatefulWidget {
   @override
   _OnBoardingState createState() => _OnBoardingState();
 }
-//TODO: add two more premissions
+//TODO: add two more permissions
 class _OnBoardingState extends State<OnBoarding> {
   final introKey = GlobalKey<IntroductionScreenState>();
   List<Permission> _permission = [Permission.camera, Permission.microphone];
@@ -39,19 +39,23 @@ class _OnBoardingState extends State<OnBoarding> {
   }
 
   Future<void> requestPermission(Permission firstPermission, Permission secondPermission) async {
-
-    final firstStatus = await firstPermission.request();
-    final secondStatus = await secondPermission.request();
-    setState(() {
-      _permissionStatus[0] = firstStatus;
-      _permissionStatus[1] = secondStatus;
-    });
+    try{
+      final firstStatus = await firstPermission.request();
+      final secondStatus = await secondPermission.request();
+      setState(() {
+        _permissionStatus[0] = firstStatus;
+        _permissionStatus[1] = secondStatus;
+      });
+    }catch(e){
+      print(e);
+    }
   }
-
+  //Fix from splash to choose screen
   Future<void> _onIntroEnd(context) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    var f = await prefs.setBool("finish", true);
+    print(f);
     if(_permissionStatus[0].toString().substring(17).replaceFirst('g', 'G') == "Granted" && _permissionStatus[1].toString().substring(17).replaceFirst('g', 'G') == "Granted"){
-      prefs.setBool("finishBoarding", true);
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => ChooseAccountScreen()),
       );
