@@ -37,7 +37,10 @@ class _RecognitionOwnerScreenState extends State<RecognitionOwnerScreen> {
   String animalOutput = "";
   String typeOutput = "";
 
-  String confidence = "";
+  String typeConfidence = "";
+  String dogsConfidence = "";
+  String catsConfidence = "";
+
   final picker = ImagePicker();
   static AudioCache player1 = AudioCache();
   static AudioCache player2 = AudioCache();
@@ -340,27 +343,6 @@ class _RecognitionOwnerScreenState extends State<RecognitionOwnerScreen> {
     );
   }
 
-
-  checkGuest() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      guest = prefs.getBool("guest");
-      ownerIdLog = prefs.getString("ownerIdLog");
-      animalId = prefs.getString('animalId');
-      emailFromLogin = prefs.getString("email");
-      ownerEmailLog = prefs.getString("ownerEmailLog");
-      ownerName = prefs.getString("ownerName");
-      ownerAvatarUrl = prefs.getString("ownerAvatarUrl");
-      animalType = prefs.getString("animalType");
-      animalName = prefs.getString("animalName");
-      animalAvatarUrl = prefs.getString("animalAvatarUrl");
-      isGMail = prefs.getBool("fromGMail");
-      isFacebook = prefs.getBool("fromFacebook");
-    });
-
-  }
-
-
   Future<void> getLocationAndSendSMS() async {
     if(animalOutput!=null){
       await getAnimalOwnerEmail(animalOutput);
@@ -416,32 +398,44 @@ class _RecognitionOwnerScreenState extends State<RecognitionOwnerScreen> {
       print("Error: $e");
     }
   }
-
-  loadModel() async {
-    try {
-      await Tflite.loadModel(
-        model: "assets/model/specificAnimalModel.tflite",
-        labels: "assets/model/specificAnimalLabels.txt",
-      );
-      print("Model loaded successfully");
-    }catch(e){
-      print("Couldn't load the model $e");
-    }
-  }
-
   loadModelOfAnimalType() async {
     try {
       await Tflite.loadModel(
-        model: "assets/model/dorOrCatModel.tflite",
-        labels: "assets/model/dogOrCatLabels.txt",
+        model: "assets/model/animalTypeModel.tflite",
+        labels: "assets/model/animalTypeLabels.txt",
       );
-      print("Model Type loaded successfully");
+      print("Model of animal Type loaded successfully");
     }catch(e){
       print("Couldn't load the model $e");
     }
   }
 
-  Future getImage() async {
+  loadModelOfDogs() async {
+    try {
+      await Tflite.loadModel(
+        model: "assets/model/dogsModel.tflite",
+        labels: "assets/model/dogsLabels.txt",
+      );
+      print("Model of dogs loaded successfully");
+    }catch(e){
+      print("Couldn't load the model $e");
+    }
+  }
+
+  loadModelOfCats() async {
+    try {
+      await Tflite.loadModel(
+        model: "assets/model/catsModel.tflite",
+        labels: "assets/model/catsLabels.txt",
+      );
+      print("Model of cats loaded successfully");
+    }catch(e){
+      print("Couldn't load the model $e");
+    }
+  }
+
+
+  Future getCameraImage() async {
     final imageFile = await picker.getImage(source: ImageSource.camera);
 
     setState(() {
@@ -453,7 +447,7 @@ class _RecognitionOwnerScreenState extends State<RecognitionOwnerScreen> {
         Text("Image not selected yet");
       }
     });
-    getLabel(imageCam);
+    getLabelOfAnimalType(imageCam);
   }
 
   Future getGalleryImage() async {
@@ -489,26 +483,28 @@ class _RecognitionOwnerScreenState extends State<RecognitionOwnerScreen> {
       recognitions = res;
       String str = recognitions[0]["label"];
       typeOutput = str.substring(2);
-      confidence = recognitions != null ? (recognitions[0]["confidence"]*100.0).toString().substring(0, 2) + '%': "";
-      print(typeOutput + " " + confidence);
-      int numberConfidence = int.tryParse(confidence.substring(0, 2));
+      typeConfidence = recognitions != null ? (recognitions[0]["confidence"]*100.0).toString().substring(0, 2) + '%': "";
+      print(typeOutput + " " + typeConfidence);
+      int numberConfidence = int.tryParse(typeConfidence.substring(0, 2));
       print(numberConfidence);
-      if(numberConfidence>=85){
-        getLabel(imageGallery);
+      if(numberConfidence>=85 && typeOutput=="dog"){
+        getLabelOfDogs(_image);
+      }else if(numberConfidence>85 && typeOutput=="cat"){
+        getLabelOfCats(_image);
       }
       print(recognitions);
     });
   }
 
-  getLabel(File _image) async {
-    loadModel().then((value){
+  getLabelOfDogs(File _image) async {
+    loadModelOfDogs().then((value){
       setState(() {
         loading = false;
       });
     });
     var res = await Tflite.runModelOnImage(
       path: _image.path,
-      numResults: 12,
+      numResults: 11,
       threshold: 0.5,
       imageMean: 127.5,
       imageStd: 127.5,
@@ -518,9 +514,44 @@ class _RecognitionOwnerScreenState extends State<RecognitionOwnerScreen> {
       recognitions = res;
       String str = recognitions[0]["label"];
       animalOutput = str.substring(2);
-      confidence = recognitions != null ? (recognitions[0]["confidence"]*100.0).toString().substring(0, 2) + '%': "";
-      print(animalOutput + " " + confidence);
-      int numberConfidence = int.tryParse(confidence.substring(0, 2));
+      dogsConfidence = recognitions != null ? (recognitions[0]["confidence"]*100.0).toString().substring(0, 2) + '%': "";
+      print(animalOutput + " " + dogsConfidence);
+      int numberConfidence = int.tryParse(dogsConfidence.substring(0, 2));
+      print(numberConfidence);
+      if(numberConfidence>=85){
+        getLocationAndSendSMS();
+      }
+      print(recognitions);
+    });
+  }
+  getLabelOfCats(File _image) async {
+    loadModelOfCats().then((value){
+      setState(() {
+        loading = false;
+      });
+    });
+    var res = await Tflite.runModelOnImage(
+      path: _image.path,
+      numResults: 1,
+      threshold: 0.5,
+      imageMean: 127.5,
+      imageStd: 127.5,
+    );
+    setState(() {
+      loading = false;
+      recognitions = res;
+      String str = recognitions[0]["label"];
+      animalOutput = str.substring(2);
+      String con = (recognitions[0]["confidence"]*100.0).toString();
+      double dCon = double.tryParse(con);
+      if(recognitions != null && dCon==100.0){
+        catsConfidence = con + '%';
+      }else if(recognitions!=null && dCon!=100.0){
+        catsConfidence = (recognitions[0]["confidence"]*100.0).toString().substring(0, 2) + '%';
+      }
+      print(animalOutput + " " + catsConfidence);
+      //TODO:fix when cats under 100%
+      int numberConfidence = int.tryParse(catsConfidence.substring(0, 3));
       print(numberConfidence);
       if(numberConfidence>=85){
         getLocationAndSendSMS();
@@ -535,6 +566,22 @@ class _RecognitionOwnerScreenState extends State<RecognitionOwnerScreen> {
       imageHeight = _imageHeight;
       imageWidth = _imageWidth;
     });
+  }
+
+  checkGuest() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+      guest = prefs.getBool("guest");
+      ownerIdLog = prefs.getString("ownerIdLog");
+      animalId = prefs.getString('animalId');
+      emailFromLogin = prefs.getString("email");
+      ownerEmailLog = prefs.getString("ownerEmailLog");
+      ownerName = prefs.getString("ownerName");
+      ownerAvatarUrl = prefs.getString("ownerAvatarUrl");
+      animalType = prefs.getString("animalType");
+      animalName = prefs.getString("animalName");
+      animalAvatarUrl = prefs.getString("animalAvatarUrl");
+      isGMail = prefs.getBool("fromGMail");
+      isFacebook = prefs.getBool("fromFacebook");
   }
 
   void initState(){
@@ -568,10 +615,8 @@ class _RecognitionOwnerScreenState extends State<RecognitionOwnerScreen> {
   @override
   Widget build(BuildContext context) {
     checkGuest();
-    if(isGMail==false){
-      getOwnerProfile(ownerIdLog);
-      getAnimalProfile();
-    }
+    getOwnerProfile(ownerIdLog);
+    getAnimalProfile();
     screenSize = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
@@ -619,7 +664,7 @@ class _RecognitionOwnerScreenState extends State<RecognitionOwnerScreen> {
               initializedCamera();
               print(camera);
               if (camera == true) {
-                getImage();
+                getCameraImage();
               }
             }
           ),
@@ -656,7 +701,7 @@ class _RecognitionOwnerScreenState extends State<RecognitionOwnerScreen> {
                 live = true;
               });
               initializedCamera();
-              loadModel();
+              loadModelOfDogs();
             },
           ),
         ),
@@ -763,7 +808,7 @@ class _RecognitionOwnerScreenState extends State<RecognitionOwnerScreen> {
                               style: TextStyle(color: Colors.black, fontSize: 20, fontFamily: 'Times New Roman'),
                             ),
                             TextSpan(
-                              text: "$confidence",
+                              text: typeOutput=="dog"?"$dogsConfidence":"$catsConfidence",
                               style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 22, fontFamily: 'Times New Roman'),
                             ),
                           ],

@@ -20,7 +20,7 @@ class _LoginState extends State<Login> {
 
 
   login(email,password) async {
-    //real device port - 192.168.0.127
+    //real device port - http://192.168.0.127:5000
     //emu device port - 10.0.2.2
     var url = "http://10.0.2.2:5000/owner/login";
     if(email != '' && password != ''){

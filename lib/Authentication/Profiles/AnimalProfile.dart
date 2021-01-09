@@ -11,8 +11,10 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:progress_dialog/progress_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
+import 'package:export_video_frame/export_video_frame.dart';
 
 class AnimalProfile extends StatefulWidget {
   @override
@@ -43,7 +45,13 @@ class _AnimalProfileState extends State<AnimalProfile> {
   bool finished = false;
   var ownerEmail;
   final FirebaseStorage _videoStorage = FirebaseStorage.instance;
+  final FirebaseStorage _framesStorage = FirebaseStorage.instance;
+
   UploadTask _videoUpload;
+  UploadTask _framesUpload;
+
+  List<File> tempImages = List();
+  ProgressDialog pr;
 
   List<AnimalType> types = <AnimalType>[
     const AnimalType('Dog',FaIcon(FontAwesomeIcons.dog, color:  const Color(0xFF167F67),)),
@@ -155,7 +163,7 @@ class _AnimalProfileState extends State<AnimalProfile> {
   }
 
   uploadVideo(File _animalVideoFile)async {
-    String filePath = 'animal/videos/$animalName.mp4';
+    String filePath = 'animal/videos/$animalName/video/$animalName.mp4';
     loadingVideo=true;
     setState(() {
       _videoUpload = _videoStorage.ref().child(filePath).putFile(_animalVideoFile);
@@ -173,22 +181,39 @@ class _AnimalProfileState extends State<AnimalProfile> {
           headerAnimationLoop: false,
           desc: '',
           btnOkOnPress: () {
-            getVideoUrl();
+            getVideoUrl(_animalVideoFile);
+            pr.show();
           }
       ).show();
-
-
     }
   }
 
-  getVideoUrl(){
+  getVideoUrl(File _animalVideoFile)async{
     Reference rfs = _videoUpload.snapshot.ref;
-    return Timer(Duration(seconds: 5), () async {
-      animalVideoUrl = await rfs.getDownloadURL();
-    });
+    animalVideoUrl = await rfs.getDownloadURL();
+    print(animalVideoUrl);
+    if(animalVideoUrl!=null){
+      extractAndUploadToStorage(_animalVideoFile);
+    }
+  }
+  extractAndUploadToStorage(File _animalVideoFile){
+    _getImages(_animalVideoFile);
+    for (int i = 0; i < tempImages.length; i++) {
+      String filePath = 'animal/videos/$animalName/frames/$animalName$i.jpg';
+      setState(() {
+        _framesUpload = _framesStorage.ref().child(filePath).putFile(tempImages[i]);
+      });
+      if(_framesUpload!=null){
+        pr.hide();
+      }
+    }
   }
 
-  _saveForm() {
+  Future _getImages(File file) async {
+    tempImages = await ExportVideoFrame.exportImage(file.path,10,1);
+  }
+
+  _saveForm() async{
     var form = formKey.currentState;
     if (form.validate()) {
       form.save();
@@ -196,6 +221,7 @@ class _AnimalProfileState extends State<AnimalProfile> {
     }
     setState(() => animalVideoFile = null);
     setState(() => animalAvatarFile = null);
+    await ExportVideoFrame.cleanImageCache();
   }
 
   void initState() {
@@ -210,12 +236,26 @@ class _AnimalProfileState extends State<AnimalProfile> {
       loadingVideo = false;
       animalVideoUrl = '';
       ownerEmail = '';
-
     });
 
   }
 
   Widget build(BuildContext context) {
+    pr = new ProgressDialog(context);
+    pr.style(
+        message: 'Please Waiting...',
+        borderRadius: 20.0,
+        backgroundColor: Colors.white,
+        progressWidget: CircularProgressIndicator(),
+        elevation: 10.0,
+        insetAnimCurve: Curves.easeInOut,
+        progress: 0.0,
+        maxProgress: 100.0,
+        progressTextStyle: TextStyle(
+            color: Colors.black, fontSize: 13.0, fontWeight: FontWeight.w400),
+        messageTextStyle: TextStyle(
+            color: Colors.black, fontSize: 19.0, fontWeight: FontWeight.w600)
+    );
     return Scaffold(
       appBar: AppBar(automaticallyImplyLeading: false, title: Text("Animal Profile", style: TextStyle(color: Colors.black),), iconTheme: IconThemeData(color: Colors.black),),
       body: Container(
@@ -235,6 +275,7 @@ class _AnimalProfileState extends State<AnimalProfile> {
           child: ListView(
             padding: const EdgeInsets.only(left: 16, right: 16, top: 20),
             children: [
+              SizedBox(height: 10,),
               buildAnimalAvatar(),
               SizedBox(height: 20),
               buildAnimalNameField(),
@@ -251,7 +292,6 @@ class _AnimalProfileState extends State<AnimalProfile> {
               SizedBox(height: 20),
               buildSaveButton(),
               SizedBox(height: 50),
-
             ],
           ),
         ),
@@ -522,7 +562,6 @@ class _AnimalProfileState extends State<AnimalProfile> {
     );
   }
 }
-
 
 class AnimalType {
   const AnimalType(this.name, this.icon);

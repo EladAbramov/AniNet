@@ -362,9 +362,7 @@ class _OwnerProfileState extends State<OwnerProfile> {
             email = savedEmail;
             var savedPass = prefs.getString('password');
             password = savedPass;
-            setState(() async{
-              await prefs.setBool("ownerFinished", true);
-            });
+            await prefs.setBool("ownerFinished", true);
             if(ownerAvatarUrl!=null){
               await ownerProfile(email, password, ownerAvatarUrl, ownerName, phoneNumber, country);
               _saveForm();

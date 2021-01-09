@@ -47,6 +47,9 @@ dependencies:
   avatar_glow: any
   dio: ^3.0.10
   firebase_auth: ^0.18.2
+  export_video_frame: ^0.0.5+3
+  progress_dialog: ^1.2.0
+
 
 dev_dependencies:
   flutter_test:
@@ -67,7 +70,6 @@ flutter:
     - assets/
     - assets/audio/
     - assets/model/
-    - assets/videos/
     - server/node_modules/saslprep/lib/
     - server/node_modules/saslprep/test/
     - server/node_modules/mongoose/lib/
